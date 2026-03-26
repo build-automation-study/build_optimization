@@ -1,15 +1,13 @@
-# 도커 이미지 최적화 스터디
+# Docker 이미지 최적화
 
-> 우리 FISA 6기 클라우드 엔지니어링
-도커 이미지 최적화 전략과 공유 실습
-> 
+> 우리 FISA 6기 클라우드 엔지니어링 \
+> 도커 이미지 최적화 전략 학습 및 실습
 
 ## 1. 팀원 소개
 
 | <img src="https://avatars.githubusercontent.com/u/181299322?v=4" width="120" height="120" /> | <img src="https://avatars.githubusercontent.com/u/113874212?v=4" width="120" height="120" /> |
 |:---:|:---:|
 | **신성혁**<br>[@ssh221](https://github.com/ssh221) | **사재헌**<br>[@Zaixian5](https://github.com/Zaixian5) |
-| springboot 앱 개발 | bash 스크립트 작성 |
 
 
 ## 2. 프로젝트 목표
@@ -20,10 +18,10 @@
 
 ## 3. 기술 스택
 
-- OS: Ubuntu 24.04
-- 컨테이너: Docker
-- 애플리케이션: Spring Boot, JSP
-- IDE: Spring Toos Suit
+- **OS:** Ubuntu 24.04 <img src="https://img.shields.io/badge/ubuntu24.04-orange?style=flat-square&logo=ubuntu&logoColor=white">
+- **컨테이너:** Docker <img src="https://img.shields.io/badge/docker-blue?style=flat-square&logo=docker&logoColor=white">
+- **애플리케이션:** Spring Boot, JSP <img src="https://img.shields.io/badge/springboot-green?style=flat-square&logo=springboot&logoColor=white"> <img src="https://img.shields.io/badge/jsp-grey?style=flat-square&logo=OpenJDK&logoColor=white">
+- **IDE:** Spring Toos Suit <img src="https://img.shields.io/badge/SpringToolSuit-green?style=flat-square&logo=Spring&logoColor=white">
 
 ## 4. 프로젝트 구성
 
@@ -52,9 +50,7 @@
     - Dockerfile과 함께 JAR 파일을 실행하는 컨테이너 이미지 생성
         - 이미지 최적화 전략 조사
         - 최적화 전략을 적용한 Dockerfile과 적용하지 않은 Dockerfile간 이미지 용량 비교
-4. Deploy & Run
-    - 생성한 이미지를 Docker Hub에 push
-    - 다른 컴퓨터에 pull하여 동일한 실행결과를 보이는지 확인
+
 
 ## 4. 이미지 최적화 전략
 
@@ -75,7 +71,7 @@
         
         | 종류 | 설명 | 특징 |
         | --- | --- | --- |
-        | Full (Standart) | 표준 리눅스의 모든 도구가 포함된 기본 이미지 | 호환성이 좋지만, 불필요한 도구가 많아 용량이 매우 큼 |
+        | Full (Standard) | 표준 리눅스의 모든 도구가 포함된 기본 이미지 | 호환성이 좋지만, 불필요한 도구가 많아 용량이 매우 큼 |
         | Slim | 표준 리눅스 환경을 유지하되, 실행에 꼭 필요하지 않은 문서나 캐시 파일만 제거한 다이어트 버전 | Full보다 가볍지만, 표준 라이브러리를 그대로 써서 안정적임 |
         | Alpine | 실행만을 위해 극도로 경량화된 Alpine Linux 기반 이미지 | 가장 용량이 작으며, 보안 노출 면적이 좁아 안전함 |
     - 실습 과정에서는 Base 이미지를 용량이 큰 `eclipse-temurin:17-jdk` 이미지 파일과 작은 `eclipse-temurin:17-jre-alpine`으로 각각 구성하여 만들어지는 이미지의 용량을 비교해보았음
@@ -87,7 +83,7 @@
     | **dependencies** | 일반 라이브러리 (Spring, Hibernate 등) |
     | **spring-boot-loader** | JAR를 실행하기 위한 로더 관련 코드 |
     | **snapshot-dependencies** | 개발 중인 SNAPSHOT 라이브러리 |
-    | **application** | **내 소스코드, 설정, JSP 등** |
+    | **application** | 소스코드, 설정, JSP 등 |
     - 이미지 빌드시 전체 JAR를 한 번에 빌드하지 않고
         
         `java -Djarmode=layertools -jar app.jar extract` 명령으로 나눠 빌드
@@ -100,23 +96,22 @@
             
             `java org.springframework.boot.loader.launch.JarLauncher` 로 빌드
             
-        
+        - 예시:
         ```
-        예시:
-        
-        소스 코드의 수정 ->
-        build.gradle은 수정되지 않았음(dependencies 레이어 변경 없음) ->
-        docker build시 dependencies 레이어 캐시 재사용 ->
+        소스 코드의 수정
+           ↓
+        build.gradle은 수정되지 않았음(dependencies 레이어 변경 없음)
+           ↓
+        docker build시 dependencies 레이어 캐시 재사용
+           ↓
         빌드 성능 향상!
         ```
         
 3. 멀티 스테이지 빌드(Multi-stage Build)
     - 하나의 Dockerfile안에 여러 `FROM` 구문을 사용하여 빌드 환경과 실행 환경을 분리하는 방식
     - 빌드 과정에서만 필요한 도구(컴파일러, SDK 등)는 첫 번째 단계에서 사용하고, 최종 결과물(컴파일된 바이너리, 정적 파일 등)만 가벼운 실행 용 이미지로 복사하여 이미지 크기를 획기적으로 줄임
-    
-    ```docker
-    예시:
-    
+    - 예시
+    ```jsx
     # 빌드 단계
     FROM openjdk:17 AS builder
     COPY . /usr/src/myapp
@@ -134,7 +129,7 @@
 
 ### 1) 최적화를 적용하지 않은 Dockerfile(Dockerfile.bad)
 
-- 최적화를 고려하지 않은 Dockerfile 생성 script
+- 최적화를 고려하지 않은 Dockerfile script
 
 ```jsx
 # 1. 무겁고 불필요한 도구가 모두 포함된 전체 JDK 사용
@@ -155,7 +150,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 - Dockerfile 구성 요소 설명
 
-| 단계 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 명령어 | 설명 | 문제점 |
+| <br>단계 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 명령어 | 설명 | 문제점 |
 | --- | --- | --- | --- |
 | 1. 베이스 이미지 | `FROM eclipse-temurin:17-jdk` | 자바 17 실행 환경, 컴파일러, 디버깅 도구 등이 모두 포함된 전체 JDK 이미지를 기반으로 시작 | jdk에는 jar를 실행하기 위한 기능 뿐만 아니라, 불필요한 개발 도구도 포함되어 있어 용량을 많이 차지함 또한 스테이지를 구분하지 않고 `FROM`절 하나만으로 빌드하여 성능 문제 발생 가능 |
 | 2. 작업 디렉토리 | `WORKDIR /app` | 명령어들이 실행될 컨테이너 내부의 기본 폴더를 `/app`으로 지정  |  |
@@ -170,7 +165,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 1. Base Image 선정
     - 용량이 큰 `eclipse-temurin:17-jdk` 이미지와 작은 `eclipse-temurin:17-jre-alpine`으로 각각 구성하여 만들어지는 이미지의 용량을 비교해보았음
     
-    ```docker
+    ```jsx
     FROM eclipse-temurin:17-jre-alpine
     
     WORKDIR /app
@@ -185,9 +180,9 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
     | 명령어 | 설명 |
     | --- | --- |
     | `FROM eclipse-temurin:17-jre-alpine` | 자바 17 Jre 이미지를 가져옴. 가장 용량이 적은 alphine 버전을 베이스 이미지로 사용하여 일반 jdk만 사용한 이미지와 비교 |
-    - 측정 결과
     
-2. 멀티 스테이징 + JAR Layer 분해
+    
+2. 멀티 스테이징과 JAR Layer 분해
     - 빌드 스테이지에서 JAR를 4개의 Layer로 분해하고, 실행 스테이지로 필요한 Layer만 복사해옴으로써 빌드 속도와 이미지의 최적화를 시도함
     
     ```jsx
@@ -209,7 +204,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
     COPY --from=builder /builder/snapshot-dependencies/ ./
     COPY --from=builder /builder/application/ ./
     
-    EXPOSE 8080
+    EXPOSE 80
     
     # 일반적인 실행 방식 (분해된 상태라 하더라도 내부 JAR 로더 사용)
     ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
@@ -217,13 +212,13 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
     
     - Dockerfile 구성 요소 설명
     
-    | 스테이지 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| 명령어 | 설명 |
+    | <br>스테이지 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| 명령어 | 설명 |
     | --- | --- | --- |
     | 빌드 스테이지 <br>(레이어 추출) | `FROM eclipse-temurin:17-jdk AS builder` | 자바 17 JDK 이미지를 가져오며, 이 단계를 `builder`라는 이름으로 부르겠다고 정의 |
     |  | `RUN java -Djarmode=layertools -jar app.jar extract` | 스프링 부트의 `layertools`를 사용하여 `app.jar` 내부를 성격에 따라 4개(의존성, 로더, 스냅샷, 애플리케이션)의 레이어 폴더로 추출 |
     | 실행 스테이지 <br>(레이어별 복사) | `FROM eclipse-temurin:17-jdk` | 빌드 스테이지의 무거운 JDK 찌꺼기들을 버리고 깨끗한 상태로 다시 시작 |
-    |  | `COPY --from=builder /builder/레이어이름/ ./` |   • 빌드 스테이지에서 쪼개놓은 4개의 폴더를 하나씩 가져옴<br>• 거의 변하지 않는 `dependencies`(의존성)를 먼저 복사하고, 가장 자주 변하는 `application`(내 코드)을 마지막에 복사하여 도커 캐시의 효율을 극대화 |
-    |  | `EXPOSE 8080`  | 컨테이너가 8080번 포트 사용 |
+    |  | `COPY --from=builder /builder/레이어이름/ ./` |   • 빌드 스테이지에서 쪼개놓은 4개의 폴더를 하나씩 가져옴<br>• 거의 변하지 않는 `dependencies`(의존성)를 먼저 복사하고, 가장 자주 변하는 `application`(코드)을 마지막에 복사하여 도커 캐시의 효율을 극대화 |
+    |  | `EXPOSE 80`  | 컨테이너가 80번 포트 사용 |
     |  | **`ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]`** | 압축된 JAR를 통째로 실행하는 대신, 이미 풀려있는 클래스들을 `JarLauncher`를 통해 즉시 실행 |
    
 
@@ -269,16 +264,17 @@ ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
 | --- | --- | --- |
 | 최적화 적용 x | 216 MB | 2.2s |
 | Alpine 베이스 이미지  | 85.7 MB | 2.0 s |
-| 멀티 스테이징 + Layer 분해 | 216 MB | 1.5 s |
-| Alpine 베이스 이미지 + 멀티 스테이징 + Layer 분해 | 85.7 MB | 1.4 s |
+| 멀티 스테이징, Layer 분해 | 216 MB | 1.5 s |
+| Alpine 베이스 이미지, 멀티 스테이징, Layer 분해 | 85.7 MB | 1.4 s |
 
 ## 7. 최종 정리
 
-> **simpleweb:bad → 최적화 되지 않은 이미지
-simpleweb:good → 최적화된 이미지**
-> 
+> **simpleweb:bad:** 최적화 되지 않은 이미지 \
+> **simpleweb:good:** 최적화된 이미지
 
 <img width="1115" height="183" alt="전체비교" src="https://github.com/user-attachments/assets/a0754d6f-a4b0-454f-84ce-b01efd3740f4" />
 
 
-멀티스테이징, Layer 분해, Base 이미지 선정 등의 최적화 방식을 사용하여 실험을 진행하였다. 실험 결과, 빌드 실행 시간에 큰 영향을 준 것은 멀티스테이징과 Layer 분해 방식이었고, 이미지 용량 최적화에 영향을 준 최적화 방식은 Base 이미지를 Alpine으로 설정한 것이었다.
+멀티스테이징, Layer 분해, Base 이미지 선정 등의 최적화 방식을 사용하여 실험을 진행하였다. <br>
+실험 결과, 빌드 실행 시간에 큰 영향을 준 것은 멀티스테이징과 Layer 분해 방식이었고, <br>
+이미지 용량 최적화에 영향을 준 최적화 방식은 Base 이미지를 Alpine으로 설정한 것이었다.
