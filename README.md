@@ -219,9 +219,9 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
     
     | 스테이지 | 명령어 | 설명 |
     | --- | --- | --- |
-    | 빌드 스테이지 (레이어 추출) | `FROM eclipse-temurin:17-jdk AS builder` | 자바 17 JDK 이미지를 가져오며, 이 단계를 `builder`라는 이름으로 부르겠다고 정의 |
+    | 빌드 스테이지 <br>(레이어 추출) | `FROM eclipse-temurin:17-jdk AS builder` | 자바 17 JDK 이미지를 가져오며, 이 단계를 `builder`라는 이름으로 부르겠다고 정의 |
     |  | `RUN java -Djarmode=layertools -jar app.jar extract` | 스프링 부트의 `layertools`를 사용하여 `app.jar` 내부를 성격에 따라 4개(의존성, 로더, 스냅샷, 애플리케이션)의 레이어 폴더로 추출 |
-    | 실행 스테이지 (레이어별 복사) | `FROM eclipse-temurin:17-jdk` | 빌드 스테이지의 무거운 JDK 찌꺼기들을 버리고 깨끗한 상태로 다시 시작 |
+    | 실행 스테이지 <br>(레이어별 복사) | `FROM eclipse-temurin:17-jdk` | 빌드 스테이지의 무거운 JDK 찌꺼기들을 버리고 깨끗한 상태로 다시 시작 |
     |  | `COPY --from=builder /builder/레이어이름/ ./` |   • 빌드 스테이지에서 쪼개놓은 4개의 폴더를 하나씩 가져옴<br>• 거의 변하지 않는 `dependencies`(의존성)를 먼저 복사하고, 가장 자주 변하는 `application`(내 코드)을 마지막에 복사하여 도커 캐시의 효율을 극대화 |
     |  | `EXPOSE 8080`  | 컨테이너가 8080번 포트 사용 |
     |  | **`ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]`** | 압축된 JAR를 통째로 실행하는 대신, 이미 풀려있는 클래스들을 `JarLauncher`를 통해 즉시 실행 |
